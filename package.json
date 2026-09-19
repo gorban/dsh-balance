@@ -1,6 +1,6 @@
 {
   "name": "@andrecgoncalves/dsh-balance",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Provider-aware account balance chip for the DeepSeek Harness web sidebar: DeepSeek, OpenRouter, Moonshot/Kimi, Zhipu/GLM, and MiniMax.",
   "license": "MIT",
   "author": {
