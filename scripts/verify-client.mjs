@@ -121,7 +121,7 @@ globalThis.fetch = async (url) => {
   fetched.push(String(url))
   return { json: async () => ({ ok: false, error: 'test', message: 'test' }) }
 }
-async function requestedKind({ provider, absent = false, throws = false, noSession = false }) {
+async function requestedKind({ provider, absent = false, throws = false, noSession = false, snapshot }) {
   effects.length = 0
   fetched.length = 0
   fakeModelDirectories = absent ? undefined : {
@@ -137,7 +137,11 @@ async function requestedKind({ provider, absent = false, throws = false, noSessi
   }
   mod.BalanceChip({
     wide: true,
-    useSessions: () => (noSession ? undefined : 'session-1'),
+    // `snapshot` drives the chip's OWN session selector over a real snapshot
+    // shape; otherwise the seat is stubbed with a fixed session id.
+    useSessions: snapshot === undefined
+      ? () => (noSession ? undefined : 'session-1')
+      : (selector) => selector(snapshot),
     getModelDirectories: () => fakeModelDirectories,
   })
   for (const effect of effects) effect()
@@ -157,6 +161,16 @@ const kindCases = [
   [{ provider: 'openrouter', absent: true }, 'deepseek', 'absent model-directory service falls back to DeepSeek'],
   [{ provider: 'openrouter', throws: true }, 'deepseek', 'unresolvable session directory falls back to DeepSeek'],
   [{ provider: 'openrouter', noSession: true }, 'deepseek', 'no active session falls back to DeepSeek'],
+  // DSH 0.1.6-alpha.2 removed the sessions snapshot's `current` field
+  // ("navigation belongs to view owners"), so the open session must be derived
+  // from main-view retention. Without that the chip resolves no session and
+  // falls back to DeepSeek in every session, masking the provider detection
+  // above — the reported "Balance —" regression.
+  [{ provider: 'openrouter', snapshot: { current: 'session-alpha1', byId: {} } }, 'openrouter', 'alpha.1 snapshot resolves the session from `current`'],
+  [{ provider: 'openrouter', snapshot: { byId: { s: { id: 'session-1', retainedBy: { mainView: 1 } } } } }, 'openrouter', 'alpha.2 snapshot resolves the session from main-view retention'],
+  [{ provider: 'openrouter', snapshot: { byId: { s: { id: 'session-1', retainedBy: { mainView: 2 } } } } }, 'openrouter', 'main-view retention is a count, not a boolean'],
+  [{ provider: 'openrouter', snapshot: { byId: { s: { id: 'session-1', retainedBy: {} } } } }, 'deepseek', 'a snapshot with no main-view retention falls back to DeepSeek'],
+  [{ provider: 'openrouter', snapshot: {} }, 'deepseek', 'an empty snapshot falls back to DeepSeek'],
 ]
 for (const [input, expected, label] of kindCases) {
   const actual = await requestedKind(input)

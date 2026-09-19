@@ -141,6 +141,33 @@ function kindForProvider(provider: string): BalanceKind {
 }
 
 /**
+ * The sessions-list snapshot face this chip reads the open session from. DSH
+ * alpha.1 carried the selected id directly as `current`; alpha.2 removed it
+ * (the Sessions service now documents that "navigation belongs to view
+ * owners"), so the open session is the row the main view retains. Both shapes
+ * are matched structurally so the chip runs on either Host.
+ */
+interface SessionsSnapshotLike {
+  current?: SessionId | null
+  byId?: Record<string, { id?: SessionId; retainedBy?: { mainView?: number } }>
+}
+
+/**
+ * Resolve the session the user currently has open.
+ *
+ * alpha.1: the list snapshot's `current`. alpha.2: that field is gone, so fall
+ * back to the session retained by the main view — the same derivation
+ * `ui-session` and `DocumentTitle` use. Returns undefined when nothing is open,
+ * which the chip treats as its DeepSeek fallback (never failing the chip).
+ * @param snapshot - the sessions list snapshot supplied by `useSessions`.
+ * @returns the open session id, or undefined when none is retained.
+ */
+function currentSessionId(snapshot: SessionsSnapshotLike): SessionId | undefined {
+  if (snapshot.current !== undefined && snapshot.current !== null) return snapshot.current
+  return Object.values(snapshot.byId ?? {}).find(row => (row.retainedBy?.mainView ?? 0) > 0)?.id
+}
+
+/**
  * Resolve the balance kind for the active session's model from the shared
  * model-directory store — the same state the composer's model seat writes, so
  * the chip follows the exact selection the session will use next. A missing
@@ -500,7 +527,9 @@ export function BalanceChip({
 }) {
   const [state, setState] = useState<DisplayState>({ kind: 'loading' })
   const anchorRef = useRef<HTMLDivElement>(null)
-  const activeSession = useSessions((snapshot) => snapshot.current)
+  const activeSession = useSessions(
+    (snapshot) => currentSessionId(snapshot as unknown as SessionsSnapshotLike),
+  )
 
   const refresh = useCallback(async () => {
     setState({ kind: 'loading' })

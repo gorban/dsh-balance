@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Every release is also published on [GitHub Releases](https://github.com/andregoncalves/dsh-balance/releases)
 and on [npm](https://www.npmjs.com/package/@andrecgoncalves/dsh-balance).
 
+## [0.4.2] — 2026-09-19
+
+### Fixed
+
+- The chip now resolves the open Session on DSH `0.1.6-alpha.2` as well as `0.1.6-alpha.1`. alpha.2
+  removed the sessions snapshot's `current` field (`ISessions.list` now documents that "navigation
+  belongs to view owners"), so `useSessions(s => s.current)` was permanently `undefined`. The chip
+  then fell through to its DeepSeek fallback and, on a Host without `DEEPSEEK_API_KEY`, rendered the
+  "Balance —" error pill in every session — including OpenRouter sessions — regardless of the
+  selected model. `currentSessionId` reads alpha.1's `current` when present, and otherwise derives
+  the open Session from main-view retention (`retainedBy.mainView`) — the same derivation
+  `ui-session` and `DocumentTitle` use. `test/current-session.test.mjs` covers both snapshot shapes,
+  the empty and unresolved cases, and the precedence of `current`.
+
 ## [0.4.1] — 2026-09-09
 
 ### Fixed
