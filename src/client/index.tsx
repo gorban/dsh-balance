@@ -124,6 +124,22 @@ type DisplayState =
   | { kind: 'error'; message: string }
 
 /**
+ * Strip the modlens vision plugin's synthetic route prefix before matching.
+ *
+ * modlens registers `modlens-<upstream>` (and the legacy `deepseek-modlens`)
+ * wrapper routes so a text-only model can accept pasted images. Those routes
+ * bill the upstream provider's account, so they resolve to that provider's
+ * balance kind; without this, selecting a "(modlens vision)" model fell through
+ * to DeepSeek and the chip showed a missing-key error instead of the OpenRouter
+ * credit the session was actually spending.
+ */
+function unwrapModlensProvider(provider: string): string {
+  const p = provider.toLowerCase()
+  if (p === 'deepseek-modlens') return 'deepseek'
+  return p.startsWith('modlens-') ? p.slice('modlens-'.length) : p
+}
+
+/**
  * Map a provider route id to the balance the plugin serves. These are the
  * routes the plugin knows; a provider route it does not recognize (including a
  * custom provider id) falls back to DeepSeek, so such a session keeps showing
@@ -132,7 +148,7 @@ type DisplayState =
  * kind because the host tries the matching mirror endpoint for that key's site.
  */
 function kindForProvider(provider: string): BalanceKind {
-  const p = provider.toLowerCase()
+  const p = unwrapModlensProvider(provider)
   if (p === 'openrouter') return 'openrouter'
   if (p === 'moonshotai' || p === 'moonshotai-cn') return 'moonshot'
   if (p === 'zai' || p === 'zai-coding-cn' || p === 'zhipu') return 'zhipu'

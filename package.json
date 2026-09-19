@@ -76,7 +76,8 @@
     "build": "tsdown",
     "prepare": "pnpm run build",
     "prepack": "pnpm run build",
-    "verify": "node scripts/verify-client.mjs"
+    "verify": "node scripts/verify-client.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
     "tsdown": "^0.22.2",

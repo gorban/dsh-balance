@@ -32,3 +32,6 @@ jobs:
 
       - name: Verify client bundle contract
         run: pnpm run verify
+
+      - name: Run tests
+        run: pnpm run test
