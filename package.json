@@ -74,7 +74,6 @@
   },
   "scripts": {
     "build": "tsdown",
-    "prepare": "pnpm run build",
     "prepack": "pnpm run build",
     "verify": "node scripts/verify-client.mjs",
     "test": "node --test test/*.test.mjs"
