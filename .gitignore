@@ -1,8 +1,11 @@
 # Dependencies
 node_modules/
 
-# Build output (rebuilt by `prepack`)
-lib/
+# Build output. This fork commits `lib/` so `github:gorban/dsh-balance`
+# installs without a build step: pnpm refuses to run a git-hosted package's
+# build scripts unless the consumer allowlists them, so depending on `prepack`
+# would make the fork unusable as a direct dependency.
+# lib/
 
 # Local packaging artifacts
 *.tgz
